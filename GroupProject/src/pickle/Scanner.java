@@ -119,7 +119,9 @@ public class Scanner {
                     iColPos++;
                 } else if (((iColPos + 1) < textCharM.length) && (textCharM[iColPos] == '/') && (textCharM[iColPos + 1] == '/')) {
                     iSourceLineNr++;
-                    textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
+                    if (iSourceLineNr < sourceLineM.size()) {
+                        textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
+                    }
                     iColPos = 0;
                     getNextToken();
                     return;
@@ -318,7 +320,6 @@ public class Scanner {
     private void createOperandToken(Token operandToken) throws Exception {
         int bIsFloat = 0;
         StringBuilder tempStr = new StringBuilder();
-
         operandToken.iColPos = iColPos;
         operandToken.primClassif = Classif.OPERAND;
         if (textCharM[iColPos] >= '0' && textCharM[iColPos] <= '9') {
@@ -358,6 +359,7 @@ public class Scanner {
             }
         } else if ((operandToken.tokenStr.equals("T")) || (operandToken.tokenStr.equals("F"))) {
             operandToken.subClassif = SubClassif.BOOLEAN;
+            nextToken.iColPos--;
             return;
         } else {
             operandToken.subClassif = SubClassif.IDENTIFIER;

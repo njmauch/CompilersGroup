@@ -125,7 +125,7 @@ public class Parser{
         //execute first statement
         ResultValue res = statement(bExec);
         //loop through source file until we reach the terminating string
-        while(! termStr.contains(res.terminatingStr) || res.terminatingStr.equals("for")) {
+        while(! termStr.contains(res.terminatingStr)) {
             //execute next statement
             res = statement(bExec);
         }
@@ -183,7 +183,19 @@ public class Parser{
         while(!scan.currentToken.tokenStr.equals(";")) {
             res = expr(true);
             //add the value returned from expr to the string
-            line += res.value + " ";
+            if(res.structure.equals(Structure.FIXED_ARRAY) || res.structure.equals(Structure.UNBOUNDED_ARRAY)) {
+                ResultArray array = (ResultArray)smStorage.getValue(res.value);
+                ArrayList<ResultValue> resultList = array.array;
+                for(ResultValue resTemp : resultList) {
+                    if(resTemp == null){
+                        continue;
+                    }
+                    line += resTemp.value + " ";
+                }
+            }
+            else {
+                line += res.value + " ";
+            }
             prevToken = scan.currentToken;
             //get next token
             scan.getNext();
@@ -763,20 +775,27 @@ public class Parser{
                     bCategory = true;
                     break;
                 case OPERATOR:
-                    if (!bCategory && !scan.currentToken.tokenStr.equals("-")) {
+                    if (!bCategory && !scan.currentToken.tokenStr.equals("-") && !scan.currentToken.tokenStr.equals("not")) {
                         error("Unexpected operator, instead got: %s", scan.currentToken.tokenStr);
                     }
-                    if(scan.currentToken.tokenStr.equals("-")) {
-                        if (prevToken.primClassif == Classif.OPERATOR || prevToken.tokenStr.equals(",") || prevToken.tokenStr.equals("(")) {
-                            if (scan.nextToken.primClassif == Classif.OPERAND || scan.nextToken.tokenStr.equals("(")) {
-                                stack.push(new Token("u-"));
-                            } else {
-                                error("Unexpected operator, instead got: %s", scan.nextToken.tokenStr);
+                    switch(scan.currentToken.tokenStr) {
+                        case "not":
+                            if (prevToken.primClassif == Classif.OPERATOR || prevToken.tokenStr.equals(",") || prevToken.tokenStr.equals("(")) {
+                                stack.push(scan.currentToken);
                             }
-                        }
-                    } else {
+                            break;
+                        case "-":
+                            if (prevToken.primClassif == Classif.OPERATOR || prevToken.tokenStr.equals(",") || prevToken.tokenStr.equals("(")) {
+                                if (scan.nextToken.primClassif == Classif.OPERAND || scan.nextToken.tokenStr.equals("(")) {
+                                    stack.push(new Token("u-"));
+                                } else {
+                                    error("Unexpected operator, instead got: %s", scan.nextToken.tokenStr);
+                                }
+                                break;
+                            }
+                        default:
                             while (!stack.empty()) {
-                                if (getPrecedence(scan.currentToken, false) > getPrecedence((Token)stack.peek(), true)) {
+                                if (getPrecedence(scan.currentToken, false) > getPrecedence((Token) stack.peek(), true)) {
                                     break;
                                 } else if (!stack.empty()) {
                                     popped = stack.pop();
@@ -784,7 +803,11 @@ public class Parser{
                                     if (popped.tokenStr.equals("u-")) {
                                         res = evalCond(resValue1, new ResultValue(), "u-");
                                         outStack.push(res);
-                                    } else {
+                                    }
+                                    else if (popped.tokenStr.equals("not")) {
+                                        res = evalCond(outStack.pop(), new ResultValue(), popped.tokenStr);
+                                    }
+                                    else {
                                         resValue2 = outStack.pop();
                                         res = evalCond(resValue2, resValue1, popped.tokenStr);
                                     }
@@ -792,7 +815,7 @@ public class Parser{
                                 }
                             }
                             stack.push(scan.currentToken);
-                    }
+                        }
                     bCategory = false;
                     break;
                 case FUNCTION:
@@ -827,7 +850,11 @@ public class Parser{
                                     resValue1 = outStack.pop();
                                     res = evalCond(resValue1, new ResultValue(), "u-");
                                     outStack.push(res);
-                                } else {
+                                }
+                                else if (popped.tokenStr.equals("not")) {
+                                    outStack.push(evalCond(outStack.pop(), new ResultValue(), "not"));
+                                }
+                                else {
                                     resValue1 = outStack.pop();
                                     resValue2 = outStack.pop();
                                     res = evalCond(resValue2, resValue1, popped.tokenStr);
@@ -855,7 +882,11 @@ public class Parser{
                 resValue1 = outStack.pop();
                 res = evalCond(resValue1, new ResultValue(), "u-");
                 outStack.push(res);
-            } else {
+            }
+            else if (popped.tokenStr.equals("not")) {
+                outStack.push(evalCond(outStack.pop(), new ResultValue(), popped.tokenStr));
+            }
+            else {
                 if(popped.primClassif.equals(Classif.FUNCTION)) {
                     error("Function %s missing right paren", popped.tokenStr);
                 }
@@ -878,7 +909,7 @@ public class Parser{
      *
      * @param resO1 first operand
      * @param resO2 second operand
-     * @param opStr
+     * @param opStr operation to be performed with the first and second operand, or possibly just first operand
      * @return
      * @throws Exception
      */
@@ -924,6 +955,7 @@ public class Parser{
                 res = Utility.uMinus(this, nOp1);
             }
             case "#" -> res = Utility.concat(this, resO1, resO2);
+            case "not" -> res = Utility.not(this, resO1);
             default -> error("Bad compare token");
         }
         return res;
@@ -1368,7 +1400,7 @@ public class Parser{
             else if(resultValue.structure == Structure.FIXED_ARRAY || resultValue.structure == Structure.UNBOUNDED_ARRAY) {
                 ResultArray resultArray2 = (ResultArray) resultValue;
                 int iDclLength = resultArray1.declaredSize;
-                int iPopLength = resultArray2.declaredSize;
+                int iPopLength = resultArray2.lastPopulated + 1;
 
                 if(declared != -1 && iDclLength < iPopLength) {
                     iPopLength = iDclLength;
