@@ -111,6 +111,7 @@ public class SymbolTable {
         this.putSymbol("Float", new STControl("Float", Classif.CONTROL, SubClassif.DECLARE));
         this.putSymbol("String", new STControl("String", Classif.CONTROL, SubClassif.DECLARE));
         this.putSymbol("Bool", new STControl("Bool", Classif.CONTROL, SubClassif.DECLARE));
+        this.putSymbol("Date", new STControl("Date", Classif.CONTROL, SubClassif.DECLARE));
 
         this.putSymbol("if", new STControl("if", Classif.CONTROL, SubClassif.FLOW));
         this.putSymbol("endif", new STControl("endif", Classif.CONTROL, SubClassif.END));
@@ -121,12 +122,17 @@ public class SymbolTable {
         this.putSymbol("endwhile", new STControl("endwhile", Classif.CONTROL, SubClassif.END));
         this.putSymbol("to", new STControl("to", Classif.CONTROL, SubClassif.FLOW));
         this.putSymbol("by", new STControl("by", Classif.CONTROL, SubClassif.FLOW));
+        this.putSymbol("break", new STControl("break", Classif.CONTROL, SubClassif.END));
+        this.putSymbol("continue", new STControl("continue", Classif.CONTROL, SubClassif.END));
 
         this.putSymbol("print", new STFunction("print", Classif.FUNCTION, SubClassif.BUILTIN));
         this.putSymbol("LENGTH", new STFunction("LENGTH", Classif.FUNCTION, SubClassif.BUILTIN));
         this.putSymbol("SPACES", new STFunction("SPACES", Classif.FUNCTION, SubClassif.BUILTIN));
         this.putSymbol("ELEM", new STFunction("ELEM", Classif.FUNCTION, SubClassif.BUILTIN));
         this.putSymbol("MAXELEM", new STFunction("MAXELEM", Classif.FUNCTION, SubClassif.BUILTIN));
+        this.putSymbol("dateDiff", new STFunction("dateDiff", Classif.FUNCTION, SubClassif.BUILTIN));
+        this.putSymbol("dateAdj", new STFunction("dateAdj", Classif.FUNCTION, SubClassif.BUILTIN));
+        this.putSymbol("dateAge", new STFunction("dateAge", Classif.FUNCTION, SubClassif.BUILTIN));
 
 
         this.putSymbol(";", new STSeparator(";", Classif.SEPARATOR));
