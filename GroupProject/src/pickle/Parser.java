@@ -472,7 +472,6 @@ public class Parser{
             //advance to the left bracket
             scan.getNext();
             //setting structure as fixed array
-            structure = Structure.FIXED_ARRAY;
             //check if size is declared
             if (scan.nextToken.tokenStr.equals("]")) {
                 //size isn't declared so get the right bracket
@@ -904,14 +903,13 @@ public class Parser{
                             }
                         default:
                             while (!stack.empty()) {
-                                if (getPrecedence(scan.currentToken, false) > getPrecedence((Token) stack.peek(), true)) {
+                                if (getPrecedence(scan.currentToken, false) > getPrecedence(stack.peek(), true)) {
                                     break;
                                 } else if (!stack.empty()) {
                                     popped = stack.pop();
                                     resValue1 = outStack.pop();
                                     if (popped.tokenStr.equals("u-")) {
                                         res = evalCond(resValue1, new ResultValue(), "u-");
-                                        outStack.push(res);
                                     }
                                     else if (popped.tokenStr.equals("not")) {
                                         res = evalCond(outStack.pop(), new ResultValue(), popped.tokenStr);
@@ -1071,9 +1069,7 @@ public class Parser{
             case "<=" -> res = Utility.lessThanOrEqual(this, resO1, resO2);
             case "==" -> res = Utility.equal(this, resO1, resO2);
             case "!=" -> res = Utility.notEqual(this, resO1, resO2);
-            case "u-" -> {
-                res = Utility.uMinus(this, resO1);
-            }
+            case "u-" -> res = Utility.uMinus(this, resO1);
             case "#" -> res = Utility.concat(this, resO1, resO2);
             case "not" -> res = Utility.not(this, resO1);
             case "or" -> res = Utility.or(this, resO1, resO2);
@@ -1092,7 +1088,6 @@ public class Parser{
      * @throws Exception
      */
     private ResultValue ifStmt(Boolean bExec) throws Exception {
-        int saveLineNr = scan.currentToken.iSourceLineNr;
         ResultValue resCond;
         String szTerminatingStr = ";";
 
@@ -1111,7 +1106,7 @@ public class Parser{
                     if (!scan.getNext().equals(":")) {
                         error("expected a ‘:’after ‘else’");
                     }
-                    resCond = statements(false, "endif");
+                    statements(false, "endif");
                 }
             } else {
                 resCond = statements(false, "endif else");
@@ -1137,7 +1132,7 @@ public class Parser{
                 if (!scan.getNext().equals(":")) {
                     error("expected a ‘:’after ‘else’");
                 }
-                resCond = statements(false, "endif");
+                statements(false, "endif");
             }
         }
 
@@ -1955,7 +1950,7 @@ public class Parser{
                 else {
                     index2 = expr(false);
                     if(Integer.parseInt(index2.value) < 0) {
-                        error("Slice value can not be less than -1");
+                        error("Slice value can not be less than 0");
                     }
                 }
             }
